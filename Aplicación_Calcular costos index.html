@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App para Jóvenes Emprendedores: Calcula Tus Costos y Proyecciones</title>
+    <style>
+        /* Estilos generales: Colores vibrantes para jóvenes (azul, verde), fuentes legibles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff; /* Azul claro */
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1, h2 {
+            color: #007bff; /* Azul vibrante */
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .paso {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 20px;
+        }
+        .paso h2 {
+            display: flex;
+            align-items: center;
+        }
+        .paso h2::before {
+            content: "📘 ";
+            margin-right: 10px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #28a745; /* Verde */
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .boton-eliminar {
+            background-color: #dc3545; /* Rojo */
+        }
+        .boton-eliminar:hover {
+            background-color: #c82333;
+        }
+        .boton-ayuda {
+            background-color: #ffc107; /* Amarillo */
+            color: #333;
+            font-size: 12px;
+            padding: 5px;
+            margin-left: 10px;
+        }
+        .error {
+            color: red;
+            font-size: 12px;
+            grid-column: span 2; /* Ocupa ambas columnas */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        #reset {
+            background-color: #6c757d; /* Gris */
+            width: 100%;
+            margin-top: 20px;
+        }
+        /* Estilos para costos fijos y variables: disposición lado a lado */
+        .costo-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* Descripción más ancha, monto más estrecho */
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .costo-container label {
+            margin: 0;
+        }
+        /* Responsive */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            .costo-container {
+                grid-template-columns: 1fr; /* Apila en pantallas pequeñas */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¡Calcula Tus Costos y Proyecciones!</h1>
+
+        <!-- Paso 1: Costos Fijos -->
+        <div class="paso" id="paso1">
+            <h2>Paso 1: Identifica Tus Costos Fijos</h2>
+            <p>Costos que no cambian, como renta o herramientas. Agrega campos según necesites.</p>
+            <div id="costos-fijos"></div>
+            <button onclick="agregarCostoFijo()">Agregar Costo Fijo</button>
+            <button class="boton-eliminar" onclick="eliminarCostoFijo()">Eliminar Último</button>
+            <p>Total Costos Fijos: <span id="total-fijos">0</span></p>
+            <button class="boton-ayuda" onclick="alert('Ejemplo: Herramientas $500 (divide si dura meses). Ingresa números positivos.')">?</button>
+        </div>
+
+        <!-- Paso 2: Costos Variables -->
+        <div class="paso" id="paso2">
+            <h2>Paso 2: Identifica Tus Costos Variables</h2>
+            <p>Costos por unidad, como materiales. Agrega campos.</p>
+            <div id="costos-variables"></div>
+            <button onclick="agregarCostoVariable()">Agregar Costo Variable</button>
+            <button class="boton-eliminar" onclick="eliminarCostoVariable()">Eliminar Último</button>
+            <p>Total por Unidad: <span id="total-variables">0</span></p>
+            <button class="boton-ayuda" onclick="alert('Ejemplo: Materiales $50 por pulsera. Ingresa números positivos.')">?</button>
+        </div>
+
+        <!-- Paso 3: Costo de Producción -->
+        <div class="paso" id="paso3">
+            <h2>Paso 3: Define el Costo de Producción</h2>
+            <p>Ingresa la cantidad de unidades a producir.</p>
+            <label>Unidades Producidas: <input type="number" id="unidades" oninput="calcularCostoProduccion()" min="1" placeholder="Ej. 100"></label>
+            <div class="error" id="error-unidades"></div>
+            <p>Costo Total: <span id="costo-total">0</span></p>
+            <p>Costo por Unidad: <span id="costo-por-unidad">0</span></p>
+            <button class="boton-ayuda" onclick="alert('Costo total = Fijos + Variables. Por unidad = Total / Unidades.')">?</button>
+        </div>
+
+        <!-- Paso 4: Costo de Venta (Precio de Venta) -->
+        <div class="paso" id="paso4">
+            <h2>Paso 4: Define el Precio de Venta</h2>
+            <p>Cuánto cobrarás por unidad. Debe ser mayor al costo.</p>
+            <label>Precio de Venta por Unidad: <input type="number" id="precio-venta" oninput="calcularPuntoEquilibrio()" min="0" placeholder="Ej. 100"></label>
+            <div class="error" id="error-precio"></div>
+            <button class="boton-ayuda" onclick="alert('Agrega ganancia al costo por unidad, ej. 30-50% extra.')">?</button>
+        </div>
+
+        <!-- Paso 5: Punto de Equilibrio -->
+        <div class="paso" id="paso5">
+            <h2>Paso 5: Calcula Tu Punto de Equilibrio</h2>
+            <p>Unidades para no perder dinero.</p>
+            <p>Punto de Equilibrio: <span id="punto-equilibrio">0</span> unidades</p>
+            <button class="boton-ayuda" onclick="alert('Fórmula: Fijos / (Precio - Variable por unidad). Redondea hacia arriba.')">?</button>
+        </div>
+
+        <!-- Paso 6: Proyección de Ventas -->
+        <div class="paso" id="paso6">
+            <h2>Paso 6: Haz una Simple Proyección de Ventas</h2>
+            <p>Tabla para meses. Agrega filas.</p>
+            <table id="proyeccion-tabla">
+                <thead>
+                    <tr>
+                        <th>Mes</th>
+                        <th>Ventas Estimadas (unidades)</th>
+                        <th>Ingresos</th>
+                        <th>Costos Variables</th>
+                        <th>Costos Fijos</th>
+                        <th>Ganancia Neta</th>
+                    </tr>
+                </thead>
+                <tbody id="proyeccion-body"></tbody>
+            </table>
+            <button onclick="agregarMes()">Agregar Mes</button>
+            <button class="boton-eliminar" onclick="eliminarMes()">Eliminar Último Mes</button>
+            <button class="boton-ayuda" onclick="alert('Estima ventas, calcula ingresos = ventas x precio, ganancia = ingresos - costos.')">?</button>
+        </div>
+
+        <button id="reset" onclick="resetearTodo()">Resetear y Empezar Nuevo</button>
+    </div>
+
+    <script>
+        // Variables globales
+        let costosFijos = [];
+        let costosVariables = [];
+        let contadorMeses = 1;
+
+        // Función para agregar costo fijo
+        function agregarCostoFijo() {
+            const div = document.createElement('div');
+            div.className = 'costo-container';
+            div.innerHTML = `
+                <label>Descripción: <input type="text" placeholder="Ej. Herramientas"></label>
+                <label>Monto Mensual: <input type="number" class="monto-fijo" oninput="calcularTotalFijos()" min="0" placeholder="Ej. 500"></label>
+                <div class="error"></div>
+            `;
+            document.getElementById('costos-fijos').appendChild(div);
+            costosFijos.push(div);
+            calcularTotalFijos();
+        }
+
+        // Eliminar último costo fijo
+        function eliminarCostoFijo() {
+            if (costosFijos.length > 0) {
+                const ultimo = costosFijos.pop();
+                ultimo.remove();
+                calcularTotalFijos();
+            }
+        }
+
+        // Calcular total fijos
+        function calcularTotalFijos() {
+            let total = 0;
+            let valid = true;
+            document.querySelectorAll('.monto-fijo').forEach(input => {
+                const valor = parseFloat(input.value) || 0;
+                const error = input.parentElement.parentElement.querySelector('.error');
+                if (valor < 0) {
+                    error.textContent = 'Monto debe ser positivo';
+                    valid = false;
+                } else {
+                    error.textContent = '';
+                    total += valor;
+                }
+            });
+            document.getElementById('total-fijos').textContent = total.toFixed(2);
+            calcularCostoProduccion();
+            calcularPuntoEquilibrio();
+            return valid ? total : 0;
+        }
+
+        // Similar para variables
+        function agregarCostoVariable() {
+            const div = document.createElement('div');
+            div.className = 'costo-container';
+            div.innerHTML = `
+                <label>Descripción: <input type="text" placeholder="Ej. Materiales"></label>
+                <label>Monto por Unidad: <input type="number" class="monto-variable" oninput="calcularTotalVariables()" min="0" placeholder="Ej. 50"></label>
+                <div class="error"></div>
+            `;
+            document.getElementById('costos-variables').appendChild(div);
+            costosVariables.push(div);
+            calcularTotalVariables();
+        }
+
+        function eliminarCostoVariable() {
+            if (costosVariables.length > 0) {
+                const ultimo = costosVariables.pop();
+                ultimo.remove();
+                calcularTotalVariables();
+            }
+        }
+
+        function calcularTotalVariables() {
+            let total = 0;
+            let valid = true;
+            document.querySelectorAll('.monto-variable').forEach(input => {
+                const valor = parseFloat(input.value) || 0;
+                const error = input.parentElement.parentElement.querySelector('.error');
+                if (valor < 0) {
+                    error.textContent = 'Monto debe ser positivo';
+                    valid = false;
+                } else {
+                    error.textContent = '';
+                    total += valor;
+                }
+            });
+            document.getElementById('total-variables').textContent = total.toFixed(2);
+            calcularCostoProduccion();
+            calcularPuntoEquilibrio();
+            return valid ? total : 0;
+        }
+
+        // Calcular costo producción
+        function calcularCostoProduccion() {
+            const fijos = parseFloat(document.getElementById('total-fijos').textContent) || 0;
+            const variablesPorUnidad = parseFloat(document.getElementById('total-variables').textContent) || 0;
+            const unidades = parseFloat(document.getElementById('unidades').value) || 0;
+            const errorUnidades = document.getElementById('error-unidades');
+
+            if (unidades <= 0) {
+                errorUnidades.textContent = 'Unidades deben ser mayores a 0';
+                return;
+            }
+            errorUnidades.textContent = '';
+
+            const variablesTotal = variablesPorUnidad * unidades;
+            const costoTotal = fijos + variablesTotal;
+            const costoPorUnidad = unidades > 0 ? costoTotal / unidades : 0;
+
+            document.getElementById('costo-total').textContent = costoTotal.toFixed(2);
+            document.getElementById('costo-por-unidad').textContent = costoPorUnidad.toFixed(2);
+        }
+
+        // Calcular punto equilibrio
+        function calcularPuntoEquilibrio() {
+            const fijos = parseFloat(document.getElementById('total-fijos').textContent) || 0;
+            const variablesPorUnidad = parseFloat(document.getElementById('total-variables').textContent) || 0;
+            const precioVenta = parseFloat(document.getElementById('precio-venta').value) || 0;
+            const errorPrecio = document.getElementById('error-precio');
+
+            if (precioVenta <= variablesPorUnidad) {
+                errorPrecio.textContent = 'Precio debe ser mayor al costo variable';
+                document.getElementById('punto-equilibrio').textContent = '0';
+                return;
+            }
+            errorPrecio.textContent = '';
+
+            const margen = precioVenta - variablesPorUnidad;
+            const punto = margen > 0 ? Math.ceil(fijos / margen) : 0;
+            document.getElementById('punto-equilibrio').textContent = punto;
+        }
+
+        // Proyección de ventas
+        function agregarMes() {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>Mes ${contadorMeses}</td>
+                <td><input type="number" class="ventas-mes" oninput="calcularProyeccion(this)" min="0" placeholder="Ej. 10"></td>
+                <td id="ingresos-${contadorMeses}">0</td>
+                <td id="variables-${contadorMeses}">0</td>
+                <td id="fijos-${contadorMeses}">0</td>
+                <td id="ganancia-${contadorMeses}">0</td>
+            `;
+            document.getElementById('proyeccion-body').appendChild(row);
+            contadorMeses++;
+        }
+
+        function eliminarMes() {
+            const body = document.getElementById('proyeccion-body');
+            if (body.rows.length > 0) {
+                body.deleteRow(-1);
+                contadorMeses--;
+            }
+        }
+
+        function calcularProyeccion(input) {
+            const row = input.parentElement.parentElement;
+            const ventas = parseFloat(input.value) || 0;
+            const precioVenta = parseFloat(document.getElementById('precio-venta').value) || 0;
+            const variablesPorUnidad = parseFloat(document.getElementById('total-variables').textContent) || 0;
+            const fijos = parseFloat(document.getElementById('total-fijos').textContent) || 0;
+
+            const ingresos = ventas * precioVenta;
+            const variablesTotal = ventas * variablesPorUnidad;
+            const ganancia = ingresos - variablesTotal - fijos;
+
+            row.querySelector(`#ingresos-${row.rowIndex}`).textContent = ingresos.toFixed(2);
+            row.querySelector(`#variables-${row.rowIndex}`).textContent = variablesTotal.toFixed(2);
+            row.querySelector(`#fijos-${row.rowIndex}`).textContent = fijos.toFixed(2);
+            row.querySelector(`#ganancia-${row.rowIndex}`).textContent = ganancia.toFixed(2);
+        }
+
+        // Resetear todo
+        function resetearTodo() {
+            document.getElementById('costos-fijos').innerHTML = '';
+            document.getElementById('costos-variables').innerHTML = '';
+            document.getElementById('total-fijos').textContent = '0';
+            document.getElementById('total-variables').textContent = '0';
+            document.getElementById('unidades').value = '';
+            document.getElementById('costo-total').textContent = '0';
+            document.getElementById('costo-por-unidad').textContent = '0';
+            document.getElementById('precio-venta').value = '';
+            document.getElementById('punto-equilibrio').textContent = '0';
+            document.getElementById('proyeccion-body').innerHTML = '';
+            costosFijos = [];
+            costosVariables = [];
+            contadorMeses = 1;
+        }
+
+        // Inicializar con un campo por defecto en cada sección
+        agregarCostoFijo();
+        agregarCostoVariable();
+        agregarMes(); // Agregar primer mes por defecto
+    </script>
+</body>
+</html>
